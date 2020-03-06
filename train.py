@@ -19,10 +19,8 @@ def files_in_directory(path: str):
     """
     Recursively count files in a directory
     """
-    dirpath, dirs, files = os.walk(path)
-    count = len(files)
-    for directory in dirs:
-        count += files_in_directory(os.path.join(dirpath, directory))
+    for _, _, files in os.walk(path):
+        count += len(files)
     
     return count
 
