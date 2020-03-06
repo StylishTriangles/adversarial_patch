@@ -8,10 +8,6 @@ from keras import backend as K
 # Layer parameters
 kernel_size = (3,3)
 
-class Model(Sequential):
-    def __init__():
-        super().__init__()
-
 def CIFAR10(input_shape, num_classes):
     # Create the model
     model = Sequential()
