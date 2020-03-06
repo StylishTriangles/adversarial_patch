@@ -1,5 +1,5 @@
 # adversarial_patch
-Create adversarial patches for custom deep learning Keras models.
+Create adversarial patches for custom Keras models.
 
 Code from https://github.com/tensorflow/cleverhans/tree/master/examples/adversarial_patch
 

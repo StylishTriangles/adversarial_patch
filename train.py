@@ -10,129 +10,85 @@ import numpy as np
 import keras
 import sys
 import os
+import json
 
-import mod
+from model import MODELS
+from model.utils import get_input_shape, summarize_accuracy
 
-# dimensions of our images.
-img_width, img_height = 128, 128
+def files_in_directory(path: str):
+    """
+    Recursively count files in a directory
+    """
+    dirpath, dirs, files = os.walk(path)
+    count = len(files)
+    for directory in dirs:
+        count += files_in_directory(os.path.join(dirpath, directory))
+    
+    return count
 
-train_data_dir = 'data'
-validation_data_dir = 'validation'
-nb_train_samples = 8800
-nb_validation_samples = 800
-epochs = 800
-batch_size = 32
+if __name__ == "__main__":
+    with open('config.json') as json_file:
+        config = json.load(json_file)
 
-if K.image_data_format() == 'channels_first':
-    input_shape = (3, img_width, img_height)
-else:
-    input_shape = (img_width, img_height, 3)
+    # dimensions of our images.
+    img_width, img_height = config["input_width"], config["input_height"]
 
-# model = Sequential()
+    train_data_dir = config["training_dir"]
+    validation_data_dir = config["validation_dir"]
+    nb_train_samples = files_in_directory(train_data_dir)
+    nb_validation_samples = files_in_directory(validation_data_dir)
+    epochs = config["train_epochs"]
+    batch_size = config["batch_size"]
+    input_shape = get_input_shape(img_width, img_height)
 
-# model.add(Conv2D(16, kernel_size, input_shape=input_shape, activation='relu'))
-# model.add(Conv2D(16, kernel_size, activation='relu'))
-# model.add(Conv2D(16, kernel_size, activation='relu'))
-# model.add(MaxPooling2D(pool_size=2))
+    classes = config["classes"]
+    num_classes = len(classes)
 
-# model.add(Conv2D(64, kernel_size, activation='relu'))
-# model.add(MaxPooling2D(pool_size=2))
+    model_name = config["model_name"]
+    # Check if the name is one of the supported custom models
+    # TODO: Add support for prebuilt Keras models
+    if model_name not in MODELS:
+        raise KeyError("Model name not recognized please try one of the following: " + str(list(MODELS.keys())))
 
-# model.add(Conv2D(128, kernel_size, activation='relu'))
+    model = MODELS[model_name](input_shape=input_shape, classes=num_classes)
 
-# model.add(Dropout(0.1))
+    model.compile(loss='categorical_crossentropy',
+                optimizer='adam',
+                metrics=[categorical_accuracy, "accuracy"]
+    )
 
-# model.add(Flatten())
-# model.add(Dense(256, activation='relu'))
-# model.add(Dense(10, activation="softmax"))
+    # this is the augmentation configuration we will use for training
+    train_datagen = ImageDataGenerator(
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True)
 
+    # this is the augmentation configuration we will use for testing:
+    test_datagen = ImageDataGenerator()
 
-##### MY STUFF
+    train_generator = train_datagen.flow_from_directory(
+        train_data_dir,
+        target_size=(img_width, img_height),
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
 
+    validation_generator = test_datagen.flow_from_directory(
+        validation_data_dir,
+        target_size=(img_width, img_height),
+        batch_size=batch_size,
+        class_mode='categorical'
+    )
 
-classes = [
-    "afterburner",  "apple",  "banana", "cat", "mug", "orange",  "racecar",  "slav",  "stephen",  "wagon"
-]
-num_models = len(classes)
-model = mod.make_model(input_shape, num_models)
+    model.fit_generator(
+        train_generator,
+        validation_data=validation_generator,
+        steps_per_epoch=nb_train_samples // batch_size,
+        epochs=epochs,
+        workers=4
+    )
 
+    model.save_weights('cool_net.h5')
 
-#### WOLOLO
-# model = Sequential()
-# model.add(Dense(256, activation='relu', input_shape=input_shape))
-# model.add(Dropout(0.2))
-# model.add(Dense(512, activation='relu'))
-# model.add(Dropout(0.2))
-# model.add(MaxPooling2D(pool_size=2))
-# model.add(Dense(512, activation='relu'))
-# model.add(Dropout(0.2))
-# model.add(MaxPooling2D(pool_size=2))
-# model.add(Flatten())
-# model.add(Dense(10, activation='softmax'))
-
-
-# model.compile(loss='categorical_crossentropy',
-#               optimizer='rmsprop',
-#               metrics=['accuracy'])
-
-model.compile(loss='categorical_crossentropy',
-              optimizer='adam',
-              metrics=[categorical_accuracy, "accuracy"]
-)
-
-# this is the augmentation configuration we will use for training
-train_datagen = ImageDataGenerator(
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True)
-
-# this is the augmentation configuration we will use for testing:
-# only rescaling
-test_datagen = ImageDataGenerator()
-
-train_generator = train_datagen.flow_from_directory(
-    train_data_dir,
-    target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='categorical'
-)
-
-validation_generator = test_datagen.flow_from_directory(
-    validation_data_dir,
-    target_size=(img_width, img_height),
-    batch_size=batch_size,
-    class_mode='categorical'
-)
-
-model.fit_generator(
-    train_generator,
-    validation_data=validation_generator,
-    steps_per_epoch=nb_train_samples // batch_size,
-    epochs=epochs,
-    workers=4
-)
-
-model.save_weights('cool_net.h5')
-
-
-ans = dict(zip(classes, [0]*num_models))
-total = dict(zip(classes, [0]*num_models))
-directory = 'validation'
-for dirname in os.listdir(directory):
-    for filename in os.listdir(os.path.join(directory, dirname)):
-        img = image.load_img(os.path.join(directory, dirname, filename), target_size=(img_width, img_height))
-        y = image.img_to_array(img)
-        y = np.expand_dims(y, axis=0)
-        output = model.predict(y)[0]
-
-        total[dirname] += 1
-        for classname, value in zip(classes, output):
-            if classname == dirname and value >= max(output):
-                ans[dirname]+=1
-for classname in classes:
-    print(
-        classname, 
-        "\tcount:", total[classname],
-        "\tsuccesses:", ans[classname], 
-        "\trate:", ans[classname]/total[classname]
-    ) 
+    # Summarize accuracy for each class in the validation dataset
+    summarize_accuracy(model, classes, validation_data_dir, img_width, img_height)
