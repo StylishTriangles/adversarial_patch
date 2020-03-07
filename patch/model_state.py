@@ -177,7 +177,7 @@ class ModelContainer():
     with self.sess.graph.as_default():
       self.learning_phase = K.learning_phase()
 
-      image_shape = INPUT_SHAPE
+      image_shape = PATCH_SHAPE
       self._image_input = keras.layers.Input(shape=image_shape)
       
       self.scale_min = tf.placeholder_with_default(SCALE_MIN, [])
@@ -203,8 +203,8 @@ class ModelContainer():
       self._clipped_patch = clip_to_valid_image(modified_patch)
       
       if keras_mode:
-        image_input = tf.image.resize_images(image_input, INPUT_SIZE)
-        image_shape = INPUT_SHAPE
+        image_input = tf.image.resize_images(image_input, PATCH_SIZE)
+        image_shape = PATCH_SHAPE
         modified_patch = tf.image.resize_images(patch, PATCH_SIZE)
       
       self.dropout = tf.placeholder_with_default(1.0, [])
