@@ -24,7 +24,7 @@ with open('config.json') as json_file:
     config = json.load(json_file)
 
 INPUT_WIDTH, INPUT_HEIGHT = config["input_width"], config["input_height"]
-LABELS = config["classes"]
+LABELS = sorted(config["classes"])
 NUM_LABELS = len(LABELS)
 
 def name_to_label(name: str) -> int:

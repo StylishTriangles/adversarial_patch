@@ -39,7 +39,7 @@ if __name__ == "__main__":
     batch_size = config["batch_size"]
     input_shape = get_input_shape(img_width, img_height)
 
-    classes = config["classes"]
+    classes = sorted(config["classes"])
     num_classes = len(classes)
 
     model_name = config["model_name"]
@@ -68,14 +68,16 @@ if __name__ == "__main__":
         train_data_dir,
         target_size=(img_width, img_height),
         batch_size=batch_size,
-        class_mode='categorical'
+        class_mode='categorical',
+        classes=classes
     )
 
     validation_generator = test_datagen.flow_from_directory(
         validation_data_dir,
         target_size=(img_width, img_height),
         batch_size=batch_size,
-        class_mode='categorical'
+        class_mode='categorical',
+        classes=classes
     )
 
     model.fit_generator(
