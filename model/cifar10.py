@@ -1,7 +1,8 @@
 from keras import Sequential
-from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Conv2D, MaxPooling2D, InputLayer
 from keras.layers import Activation, Dropout, Flatten, Dense, BatchNormalization
 from keras.constraints import maxnorm
+from keras import backend as K
 
 from .utils import get_input_shape
 
