@@ -9,7 +9,7 @@
     "input_height": 128,
 
     "target_class": "stephen",
-    "patch_size": [299, 299],
-    "patch_epochs": 240,
+    "patch_size": [128, 128],
+    "patch_epochs": 500,
     "output_dir": "assets"
 }
