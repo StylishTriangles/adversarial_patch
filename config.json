@@ -3,11 +3,13 @@
     "validation_dir": "validation",
     "classes": [ "afterburner", "apple", "banana", "cat", "mug", "orange", "racecar", "slav", "stephen", "wagon"],
     "train_epochs": 40,
+    "batch_size": 16,
     "model_name": "SimpleVGG16",
     "input_width": 128,
     "input_height": 128,
 
     "target_class": "stephen",
     "patch_size": [299, 299],
-    "patch_epochs": 400
+    "patch_epochs": 240,
+    "output_dir": "assets"
 }

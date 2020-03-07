@@ -6,12 +6,21 @@ from keras.constraints import maxnorm
 from .utils import get_input_shape
 
 class CIFAR10(Sequential):
-    def __init__(self, input_shape = None, classes = 10):
+    def __init__(self, input_shape = None, input_tensor=None, classes = 10):
         super(CIFAR10, self).__init__()
 
         if input_shape is None:
             input_shape = get_input_shape(64, 64)
 
+        if input_tensor is None:
+            img_input = InputLayer(input_shape=input_shape)
+        else:
+            if not K.is_keras_tensor(input_tensor):
+                img_input = InputLayer(input_tensor=input_tensor, input_shape=input_shape)
+            else:
+                img_input = input_tensor
+
+        self.add(img_input)
         self.add(Conv2D(32, (3, 3), input_shape=input_shape, activation='relu'))
         self.add(Dropout(0.2))
         self.add(BatchNormalization())
