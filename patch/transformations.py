@@ -58,8 +58,8 @@ def test_random_transform(min_scale=0.5, max_scale=1.0,  max_rotation=22.5):
   img_shape = [100,100,3]
   img = np.ones(img_shape)
   
-  sess = tf.Session()
-  image_in = tf.placeholder(dtype=tf.float32, shape=img_shape)
+  sess = tf.compat.v1.Session()
+  image_in = tf.compat.v1.placeholder(dtype=tf.float32, shape=img_shape)
   width = img_shape[0]
   
   def _random_transformation():
@@ -78,7 +78,7 @@ def test_random_transform(min_scale=0.5, max_scale=1.0,  max_rotation=22.5):
                                      im_scale=im_scale, 
                                      rot_in_degrees=rot)
 
-  random_xform_vector = tf.py_func(_random_transformation, [], tf.float32)
+  random_xform_vector = tf.numpy_function(_random_transformation, [], tf.float32)
   random_xform_vector.set_shape([8])
 
   output = tf.contrib.image.transform(image_in, random_xform_vector , "BILINEAR")

@@ -9,7 +9,7 @@ import sys
 import time
 
 from patch.constants import *
-from patch.image import *
+from patch.image import load_image, StubImageLoader
 from patch.transformations import transform_vector
 
 image_loader = StubImageLoader(VALIDATION_DIR, BATCH_SIZE)
@@ -68,7 +68,7 @@ class ModelContainer():
     # 
     self.model_name = model_name
     self.graph = tf.Graph()
-    self.sess = tf.Session(graph=self.graph)
+    self.sess = tf.compat.v1.Session(graph=self.graph)
     self.peace_mask = peace_mask
     self.patch_shape = PATCH_SHAPE
     self._peace_mask_overlay = peace_mask_overlay
@@ -182,14 +182,14 @@ class ModelContainer():
       
       self.scale_min = tf.placeholder_with_default(SCALE_MIN, [])
       self.scale_max = tf.placeholder_with_default(SCALE_MAX, [])
-      self._scales = tf.random_uniform([BATCH_SIZE], minval=self.scale_min, maxval=self.scale_max)
+      self._scales = tf.random.uniform([BATCH_SIZE], minval=self.scale_min, maxval=self.scale_max)
 
       image_input = self._image_input
       self.patch_disguise = tf.placeholder_with_default(tf.zeros(self.patch_shape), shape=self.patch_shape)
       self.disguise_alpha = tf.placeholder_with_default(0.0, [])
-      patch = tf.get_variable("patch", self.patch_shape, dtype=tf.float32, initializer=tf.zeros_initializer)
+      patch = tf.compat.v1.get_variable("patch", self.patch_shape, dtype=tf.float32, initializer=tf.zeros_initializer)
       self._patch_placeholder = tf.placeholder(dtype=tf.float32, shape=self.patch_shape)
-      self._assign_patch = tf.assign(patch, self._patch_placeholder)
+      self._assign_patch = tf.compat.v1.assign(patch, self._patch_placeholder)
 
       modified_patch = patch
 
@@ -208,7 +208,7 @@ class ModelContainer():
         modified_patch = tf.image.resize_images(patch, PATCH_SIZE)
       
       self.dropout = tf.placeholder_with_default(1.0, [])
-      patch_with_dropout = tf.nn.dropout(modified_patch, keep_prob=self.dropout)
+      patch_with_dropout = tf.nn.dropout(modified_patch, rate=1-self.dropout)
       patched_input = clip_to_valid_image(self._random_overlay(image_input, patch_with_dropout, image_shape))
 
 
@@ -247,7 +247,7 @@ class ModelContainer():
       # Pre-softmax logits of our pretrained model
       logits = model.outputs[0].op.inputs[0]
 
-      self._loss_per_example = tf.nn.softmax_cross_entropy_with_logits(
+      self._loss_per_example = tf.nn.softmax_cross_entropy_with_logits_v2(
           labels=self._target_ys, 
           logits=logits
       )
@@ -261,7 +261,7 @@ class ModelContainer():
 
       # Train our attack by only training on the patch variable
       self._learning_rate = tf.placeholder(tf.float32)
-      self._train_op = tf.train.GradientDescentOptimizer(self._learning_rate)\
+      self._train_op = tf.compat.v1.train.GradientDescentOptimizer(self._learning_rate)\
                                .minimize(self._loss, var_list=[patch])
 
       self._probabilities = model.outputs[0]
@@ -323,7 +323,7 @@ class ModelContainer():
 
     for i in range(BATCH_SIZE):
       # Shift and scale the patch for each image in the batch
-      random_xform_vector = tf.py_func(_random_transformation, [self.scale_min, self.scale_max, image_shape[0]], tf.float32)
+      random_xform_vector = tf.numpy_function(_random_transformation, [self.scale_min, self.scale_max, image_shape[0]], tf.float32)
       random_xform_vector.set_shape([8])
 
       transform_vecs.append(random_xform_vector)
