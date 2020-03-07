@@ -203,9 +203,9 @@ class ModelContainer():
       self._clipped_patch = clip_to_valid_image(modified_patch)
       
       if keras_mode:
-        image_input = tf.image.resize_images(image_input, PATCH_SIZE)
+        image_input = tf.image.resize(image_input, PATCH_SIZE)
         image_shape = PATCH_SHAPE
-        modified_patch = tf.image.resize_images(patch, PATCH_SIZE)
+        modified_patch = tf.image.resize(patch, PATCH_SIZE)
       
       self.dropout = tf.placeholder_with_default(1.0, [])
       patch_with_dropout = tf.nn.dropout(modified_patch, rate=1-self.dropout)
