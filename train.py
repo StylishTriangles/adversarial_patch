@@ -19,12 +19,16 @@ def files_in_directory(path: str):
     """
     Recursively count files in a directory
     """
+    count = 0
     for _, _, files in os.walk(path):
         count += len(files)
     
     return count
 
 if __name__ == "__main__":
+    train()
+
+def train(weights_dir="deep_network.h5"):
     with open('config.json') as json_file:
         config = json.load(json_file)
 
@@ -38,6 +42,7 @@ if __name__ == "__main__":
     epochs = config["train_epochs"]
     batch_size = config["batch_size"]
     input_shape = get_input_shape(img_width, img_height)
+    input_tensor = tuple(config["patch_size"])
 
     classes = sorted(config["classes"])
     num_classes = len(classes)
@@ -48,7 +53,7 @@ if __name__ == "__main__":
     if model_name not in MODELS:
         raise KeyError("Model name not recognized please try one of the following: " + str(list(MODELS.keys())))
 
-    model = MODELS[model_name](input_shape=input_shape, classes=num_classes)
+    model = MODELS[model_name](input_shape=input_shape, input_tensor=input_tensor, classes=num_classes)
 
     model.compile(loss='categorical_crossentropy',
                 optimizer='adam',
@@ -88,7 +93,7 @@ if __name__ == "__main__":
         workers=4
     )
 
-    model.save_weights('cool_net.h5')
+    model.save_weights(weights_dir)
 
     # Summarize accuracy for each class in the validation dataset
     summarize_accuracy(model, classes, validation_data_dir, img_width, img_height)
