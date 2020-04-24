@@ -14,7 +14,7 @@ do
 	do
 		if [ $RANDOM -ge 25000 ]; then
 			mkdir -p $dest/$dir
-			mv $source/$dir/$file $dest/$dir/$file
+			mv "$source/$dir/$file" "$dest/$dir/$file"
 		fi
 	done
 done
