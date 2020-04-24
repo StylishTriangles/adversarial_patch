@@ -49,7 +49,7 @@ class BalancedImageFlow:
     def _should_discard(self, labels: np.array):
         """Should the set be discarded?"""
         nz_index = labels.nonzero()[0][0]
-        chance_to_delete = self.counters[nz_index]/self.total - self.expected_ratio
+        chance_to_delete = (self.counters[nz_index]/self.total - self.expected_ratio)*len(self.classes)
         if random.random() < chance_to_delete:
             return True
         return False
