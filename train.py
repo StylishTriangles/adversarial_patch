@@ -5,68 +5,15 @@ from keras.layers import Activation, Dropout, Flatten, Dense, Input
 from keras.metrics import categorical_accuracy, top_k_categorical_accuracy
 from keras.preprocessing import image
 from keras import backend as K
+from sklearn.metrics import classification_report
 import numpy as np
 import keras
 import sys
 import os
 import json
-import random
 
 from model import MODELS
 from model.utils import get_input_shape, summarize_accuracy
-
-
-class BalancedImageFlow:
-    def __init__(
-        self, 
-        image_generator: ImageDataGenerator,
-        directory: str, 
-        classes: list,
-        target_size: tuple = (256,256), 
-        batch_size: int = 32, 
-        class_mode: str = "categorical"
-        ):
-        self.flow_generator = image_generator.flow_from_directory(
-            directory=directory,
-            classes=classes, 
-            target_size=target_size, 
-            batch_size=1, # take the next image and discard if class appeared too many times
-            class_mode=class_mode
-        )
-        self.batch_size = batch_size
-        self.classes = classes
-        self.test = False
-        # how many instances of each class appeared so far
-        self.counters = np.ones(len(classes))
-        # total classes
-        self.total = len(classes)
-        # the expected percentage of instances of given class
-        self.expected_ratio = len(self.classes)/self.total
-
-    def __iter__(self):
-        return self
-
-    def _should_discard(self, labels: np.array):
-        """Should the set be discarded?"""
-        nz_index = labels.nonzero()[0][0]
-        chance_to_delete = self.counters[nz_index]/self.total - self.expected_ratio
-        if random.random() < chance_to_delete:
-            return True
-        return False
-
-    def __next__(self):
-        img_batch = []
-        labels_batch = []
-        while len(img_batch) < self.batch_size:
-            images, labels = next(self.flow_generator)
-            if not self._should_discard(labels):
-                img_batch.extend(images)
-                labels_batch.extend(labels)
-                self.counters += labels[0] # labels is a 2D array with labels array at index 0
-                self.total += 1
-        # the labels returned is a 2 dimensional array with just
-        return (np.array(img_batch), np.array(labels_batch))
-
 
 def files_in_directory(path: str):
     """
@@ -115,14 +62,12 @@ def train(weights_output="deep_network.h5"):
     train_datagen = ImageDataGenerator(
         shear_range=0.2,
         zoom_range=0.2,
-        rotation_range=20,
         horizontal_flip=True)
 
     # this is the augmentation configuration we will use for testing:
     test_datagen = ImageDataGenerator()
 
-    train_generator = BalancedImageFlow(
-        test_datagen,
+    train_generator = train_datagen.flow_from_directory(
         train_data_dir,
         target_size=(img_width, img_height),
         batch_size=batch_size,
